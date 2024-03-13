@@ -19,34 +19,32 @@ jobs:
           python-version: 3.8
 
       - name: Determine Bump Type Based on Branch Name
-        id: bump-type
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
           if [[ "$BRANCH_NAME" == "release"* ]]; then
-            echo "::set-output name=type::minor"
+            echo "BUMP_TYPE=minor" >> $GITHUB_ENV
           elif [[ "$BRANCH_NAME" == "hotfix"* ]]; then
-            echo "::set-output name=type::patch"
+            echo "BUMP_TYPE=patch" >> $GITHUB_ENV
           elif [[ "$BRANCH_NAME" == "bump"* ]]; then
-            echo "::set-output name=type::major"
+            echo "BUMP_TYPE=major" >> $GITHUB_ENV
           else
-            echo "::set-output name=type::none"
+            echo "BUMP_TYPE=none" >> $GITHUB_ENV
           fi
 
       - name: Bump version
         if: steps.bump-type.outputs.type != 'none'
         id: bump-version
         run: |
-          VERSION=$(python bump_version.py --file_path path/to/your/file.json --type ${{ steps.bump-type.outputs.type }})
-          echo "::set-output name=version::$VERSION"
+          VERSION=$(python bump_version.py --file_path apps/app/build.gradle --type $BUMP_TYPE)
+          echo "New version: $VERSION"
           echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Commit and Tag
         if: env.NEW_VERSION
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add path/to/your/file.json
+          git add apps/app/build.gradle
           git commit -m "Bump version to $NEW_VERSION"
-          git tag $NEW_VERSION
-          git push
-          git push --tags
+          git tag -a $NEW_VERSION -m "Version $NEW_VERSION"
+          git push origin $NEW_VERSION
+          git push origin main
