@@ -18,14 +18,16 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Determine Bump Type
+      - name: Determine Bump Type Based on Branch Name
         id: bump-type
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          if [[ "$PR_TITLE" == *"release"* ]]; then
+          BRANCH_NAME="${{ github.head_ref }}"
+          if [[ "$BRANCH_NAME" == "release"* ]]; then
             echo "::set-output name=type::minor"
-          elif [[ "$PR_TITLE" == *"hotfix"* ]]; then
+          elif [[ "$BRANCH_NAME" == "hotfix"* ]]; then
             echo "::set-output name=type::patch"
+          elif [[ "$BRANCH_NAME" == "bump"* ]]; then
+            echo "::set-output name=type::major"
           else
             echo "::set-output name=type::none"
           fi
